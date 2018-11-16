@@ -179,43 +179,6 @@ const getCommands = () => {
         });
     }
 
-    //    logging.info("isReturning:", shipStatusArray.filter(s => s.isReturning).map(s => s.id).join(','),
-    //        "lens", ships.map(aShip => gameMap.calculateDistance(me.shipyard.position, aShip.position)).join(','));
-
-    //    logging.info("Moves raw:", moves.map(m => m.ship.id + " to:" + m.to.x+","+m.to.y+" from:"+m.from.x+","+m.from.y).join(";"));
-    //    
-    //    
-    //    // -------------------------
-    //    // REORDER MOVES
-    //    // -------------------------
-    //    
-    //    // Reorder the moves to avoid collisions
-    //    // FIXME: mind the spawns
-    //
-    //    for(let i = 0; i < moves.length - 1; i++) {
-    //        while (true) {
-    //            // Search for a collision and swap if any
-    //            let isCollision = false;
-    //            for(let j = i + 1; j < moves.length; j++) {
-    //                if(moves[i].to.equals(moves[j].from)) {
-    //                    // swap
-    //                    let tmpMove = moves[i];
-    //                    moves[i] = moves[j];
-    //                    moves[j] = tmpMove;
-    //                    
-    //                    isCollision = true;
-    //                    break;
-    //                }
-    //            }
-    //            
-    //            if(!isCollision) {
-    //                break;
-    //            }
-    //        }
-    //    }
-    //    
-    //    logging.info("Moves ord:", moves.map(m => m.ship.id + " to:" + m.to.x+","+m.to.y+" from:"+m.from.x+","+m.from.y).join(";"));
-
     // Issue the actual move commends.
     for (let move of moves) {
         commandQueue.push(move.ship.move(move.direction));
