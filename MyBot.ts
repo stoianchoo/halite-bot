@@ -80,42 +80,6 @@ const getCommands = () => {
                 moveDirection = selectDirection(Direction.getAllCardinals());
             }
 
-
-            //            let moveDirection = gameMap.naiveNavigate(ship, destination); // Marks unsafe
-
-            // We want to move but there is a ship there. Possibly a deadlock.
-            // FIXME: maybe wait a turn. Now immediately moves in random unoccupied direction.
-            //            if(moveDirection === Direction.Still) {
-            //                // For the final phase we have to ingore any ships in the base.
-            //                // FIXME: Maybe move this in naiveNaviagate? Probably not.
-            //                if(returnAllShips) {
-            //                    const shipyardOnNextMoveDirection = Direction.getAllCardinals()
-            //                        .filter(direction => {
-            //                            const nextPos = ship.position.directionalOffset(direction);
-            //                            return nextPos.equals(me.shipyard.position);
-            //                        })[0];
-            //                    if(shipyardOnNextMoveDirection) {
-            //                        moveDirection = shipyardOnNextMoveDirection;
-            //                    }
-            //                } 
-            //                else
-            //                // Move in random unoccupied direction.
-            //                {
-            //                    const possibleDirections = Direction.getAllCardinals().filter(dir => {
-            //                        const destinationPosition = ship.position.directionalOffset(dir);
-            //                        const destinationCell = gameMap.get(destinationPosition);
-            //                        return !destinationCell.isOccupied || (ship.halite >= Math.floor(destinationCell.haliteAmount/Constants.MOVE_COST_RATIO)); // Ensure enough halite to move
-            //                    });
-            //                    
-            //                    const getRandomArrayElement = arr => 
-            //                        arr[Math.floor(arr.length * Math.random())];
-            //    
-            //                    if(possibleDirections.length > 0) {
-            //                        moveDirection = getRandomArrayElement(possibleDirections);
-            //                    }
-            //                }
-            //            }
-
             // Issue the move
             if (moveDirection !== Direction.Still) {
                 // Mark the current ship position as safe (free) as the ship will move to another position.
@@ -175,7 +139,6 @@ const getCommands = () => {
         }
     } // while loop
 
-    // !!!! Do this next
     // Spawn new ships
     // FIXME: Base this on the map size number of players and total halite on the map
     // FIXME: add some dynamic ship creation depending on ship loss due to war or accident
@@ -187,7 +150,6 @@ const getCommands = () => {
             alreadySpawned = true;
         }
     };
-
 
     const isAfterGameProgress = (coeff: number) => game.turnNumber < coeff * Constants.MAX_TURNS;
     if (isAfterGameProgress(0.5)) {
