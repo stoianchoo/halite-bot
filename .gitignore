@@ -1,4 +1,5 @@
 *.hlt
 *.log
 *~ts
-/out/*
+/out
+/node_modules
