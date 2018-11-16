@@ -1,19 +1,39 @@
-const hlt = require('./hlt');
-const { Direction } = require('./hlt/positionals');
-const logging = require('./hlt/logging');
-const game = new hlt.Game();
+import { Constants } from './hlt/constants';
+import { Direction, Position } from './hlt/positionals';
+import { Logging } from './hlt/logging';
+import { Game } from './hlt/networking';
+import { GameMap, Player } from './hlt/gameMap';
+import { Ship } from './hlt/entity';
 
-let shipStatusArray = [];
+const game = new Game();
+
+interface ShipStatus {
+    id: number;
+    isReturning: boolean;
+}
+
+interface ShipMove {
+    direction: Direction;
+    ship: Ship;
+    from: Position;
+    to: Position;
+}
+
+let shipStatusArray: ShipStatus[] = [];
 let returnAllShips = false;
 let shipsCount = 0;
 
 const getCommands = () => {
 
-    const moves = [];
+    const moves: ShipMove[] = [];
 
-    const { gameMap, me } = game;
+    const gameMap = game.gameMap; 
+    const me = game.me;
+    if(!(gameMap instanceof GameMap) || !(me instanceof Player)) {
+        throw "Game not initialized properly!";
+    }
 
-    const commandQueue = [];
+    const commandQueue: string[] = [];
     
     const ships = me.getShips();
     
@@ -21,7 +41,7 @@ const getCommands = () => {
     const newShipStatusArray = [];
     for(const ship of ships) {
         if(!shipStatusArray[ship.id]) {
-            newShipStatusArray[ship.id] = {id:ship.id};
+            newShipStatusArray[ship.id] = {id:ship.id, isReturning: false};
         } else {
             newShipStatusArray[ship.id] = shipStatusArray[ship.id];
         }
@@ -31,21 +51,21 @@ const getCommands = () => {
     for (const ship of ships) {
     
         // Move avoiding deadlock. In final return ignore ships in the base.
-        const move = destination => {
+        const move = (destination: Position) => {
             
-            const isSafeToMove = direction => {
+            const isSafeToMove = (direction: Direction) => {
                 const destinationPosition = ship.position.directionalOffset(direction);
                 const destinationCell = gameMap.get(destinationPosition);
                 const shipCell = gameMap.get(ship.position);
-                const isEnoughHaliteToMove = ship.haliteAmount >= Math.floor(shipCell.haliteAmount / hlt.constants.MOVE_COST_RATIO);
+                const isEnoughHaliteToMove = ship.haliteAmount >= Math.floor(shipCell.haliteAmount / Constants.MOVE_COST_RATIO);
                 const isDestinationOccupied = destinationPosition.equals(me.shipyard.position) && returnAllShips ? false : destinationCell.isOccupied;
                 return  !isDestinationOccupied && isEnoughHaliteToMove;
             };
             
-            const selectDirection = directionsArray => {
+            const selectDirection = (directionsArray: Direction[]) => {
                 const safeDirectionsArray = directionsArray.filter(isSafeToMove);
                 
-                const getRandomArrayElement = arr => arr[Math.floor(arr.length * Math.random())];
+                const getRandomArrayElement = (arr: any[]) => arr[Math.floor(arr.length * Math.random())];
                 if(safeDirectionsArray.length > 0) {
                     return getRandomArrayElement(safeDirectionsArray);
                 }
@@ -84,7 +104,7 @@ const getCommands = () => {
 //                    const possibleDirections = Direction.getAllCardinals().filter(dir => {
 //                        const destinationPosition = ship.position.directionalOffset(dir);
 //                        const destinationCell = gameMap.get(destinationPosition);
-//                        return !destinationCell.isOccupied || (ship.halite >= Math.floor(destinationCell.haliteAmount/hlt.constants.MOVE_COST_RATIO)); // Ensure enough halite to move
+//                        return !destinationCell.isOccupied || (ship.halite >= Math.floor(destinationCell.haliteAmount/Constants.MOVE_COST_RATIO)); // Ensure enough halite to move
 //                    });
 //                    
 //                    const getRandomArrayElement = arr => 
@@ -107,7 +127,7 @@ const getCommands = () => {
                 gameMap.get(to).ship = ship;
                 gameMap.get(from).ship = null;
     
-                moves.push({ship, moveDirection, from, to});
+                moves.push({ship, direction:moveDirection, from, to});
             }
         };
 
@@ -122,7 +142,7 @@ const getCommands = () => {
         }
 
         // Return if we have enough cargo
-        if (!shipStatusArray[ship.id].isReturning && (ship.haliteAmount > hlt.constants.MAX_HALITE * 0.9)) {
+        if (!shipStatusArray[ship.id].isReturning && (ship.haliteAmount > Constants.MAX_ENERGY * 0.9)) {
             shipStatusArray[ship.id].isReturning = true;
         }
 
@@ -134,7 +154,7 @@ const getCommands = () => {
         // -------------------------------------
         // GATHER HALITE
         // -------------------------------------
-        else if (!returnAllShips && gameMap.get(ship.position).haliteAmount < hlt.constants.MAX_HALITE * 0.05) {
+        else if (!returnAllShips && gameMap.get(ship.position).haliteAmount < Constants.MAX_ENERGY * 0.05) {
             // Collect halite
             let bestPosition = ship.position;
             for(const direction of Direction.getAllCardinals()) {
@@ -162,14 +182,14 @@ const getCommands = () => {
     
     let alreadySpawned = false;
     const spawnShip = () => {
-        if(!alreadySpawned && me.haliteAmount >= hlt.constants.SHIP_COST && !gameMap.get(me.shipyard).isOccupied) {
+        if(!alreadySpawned && me.haliteAmount >= Constants.SHIP_COST && !gameMap.get(me.shipyard).isOccupied) {
             commandQueue.push(me.shipyard.spawn());
             alreadySpawned = true;
         }
     };
 
     
-    const isAfterGameProgress = coeff => game.turnNumber < coeff * hlt.constants.MAX_TURNS;
+    const isAfterGameProgress = (coeff: number) => game.turnNumber < coeff * Constants.MAX_TURNS;
     if (isAfterGameProgress(0.5)) {
         spawnShip();
     }
@@ -190,7 +210,7 @@ const getCommands = () => {
     // const leftTurnsToReturnAll = Math.max(gameMap.width/2, gameMap.height/2);
 
     const deadlockMovesReserve = 3 + (gameMap.width + gameMap.height)/20;
-    if(!returnAllShips && (hlt.constants.MAX_TURNS - game.turnNumber < (maxShipDistanceToShipyard + deadlockMovesReserve))) {
+    if(!returnAllShips && (Constants.MAX_TURNS - game.turnNumber < (maxShipDistanceToShipyard + deadlockMovesReserve))) {
         returnAllShips = true;
         shipStatusArray.forEach(shipStatus => {
             shipStatus.isReturning = true;
@@ -236,7 +256,7 @@ const getCommands = () => {
     
     // Issue the actual move commends.
     for(let move of moves) {
-        commandQueue.push(move.ship.move(move.moveDirection));
+        commandQueue.push(move.ship.move(move.direction));
     }
 
 //    logging.info("commands: ",commandQueue);
@@ -248,7 +268,7 @@ const getCommands = () => {
 game.initialize().then(async () => {
     await game.ready('MyJavaScriptBot');
 
-    logging.info(`My Player ID is ${game.myId}.`);
+    Logging.info(`My Player ID is ${game.myId}.`);
 
     while (true) {
         await game.updateFrame();
