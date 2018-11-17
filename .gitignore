@@ -1,5 +1,7 @@
 *.hlt
 *.log
 *~ts
+*.sqlite3
 /out
 /node_modules
+/manager

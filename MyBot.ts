@@ -5,6 +5,10 @@ import { Game } from './hlt/networking';
 import { GameMap, Player } from './hlt/gameMap';
 import { Ship } from './hlt/entity';
 
+const FILL_THRESHOLD = process.argv[2] ? Number(process.argv[2]) : 0.9; // TEST: 0.9 - 0.75
+const GATHER_NEXT = process.argv[3] ? Number(process.argv[3]) : 0.05; // TEST: 0.02 - 0.1
+const SPAWN_PHASE = process.argv[4] ? Number(process.argv[4]) : 0.5; // TEST: 0.4 - 0.7
+
 const game = new Game();
 
 interface ShipStatus {
@@ -106,7 +110,7 @@ const getCommands = () => {
         }
 
         // Return if we have enough cargo
-        if (!shipStatusArray[ship.id].isReturning && (ship.haliteAmount > Constants.MAX_ENERGY * 0.9)) {
+        if (!shipStatusArray[ship.id].isReturning && (ship.haliteAmount > Constants.MAX_ENERGY * FILL_THRESHOLD)) {
             shipStatusArray[ship.id].isReturning = true;
         }
 
@@ -118,7 +122,7 @@ const getCommands = () => {
         // -------------------------------------
         // GATHER HALITE
         // -------------------------------------
-        else if (!returnAllShips && gameMap.get(ship.position).haliteAmount < Constants.MAX_ENERGY * 0.05) {
+        else if (!returnAllShips && gameMap.get(ship.position).haliteAmount < Constants.MAX_ENERGY * GATHER_NEXT) {
             // Collect halite
             let bestPosition = ship.position;
             for (const direction of Direction.getAllCardinals()) {
@@ -152,12 +156,12 @@ const getCommands = () => {
     };
 
     const isAfterGameProgress = (coeff: number) => game.turnNumber < coeff * Constants.MAX_TURNS;
-    if (isAfterGameProgress(0.5)) {
+    if (isAfterGameProgress(SPAWN_PHASE)) {
         spawnShip();
     }
 
     // Recover from killed ships
-    if ((!returnAllShips) && (shipsCount > ships.length) && !isAfterGameProgress(0.7)) {
+    if ((!returnAllShips) && (shipsCount > ships.length) && !isAfterGameProgress(SPAWN_PHASE)) {
         spawnShip();
     }
     shipsCount = ships.length;
@@ -191,7 +195,7 @@ const getCommands = () => {
 };
 
 game.initialize().then(async () => {
-    await game.ready('MyJavaScriptBot');
+    await game.ready('F:' + FILL_THRESHOLD + ' GN:' + GATHER_NEXT + ' SWN:' + SPAWN_PHASE);
 
     Logging.info(`My Player ID is ${game.myId}.`);
 
